@@ -1,4 +1,4 @@
-import { format, formatDistanceToNow } from 'date-fns'
+import { format, formatDistanceToNow, set } from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
 
 import { Avatar } from './Avatar'
@@ -9,6 +9,8 @@ import { useState } from 'react'
 export function Post({ author, publishedAt, content }) {
   // Criar um estado para o React acompanhar
   const [comments, setComments] = useState(['Post muito bacana, hein!!!!!'])
+
+  // 'newCommentText' monitora em tempo real oq está sendo escrito naa textarea
 
   const [newCommentText, setnewCommentText] = useState('')
 
@@ -25,6 +27,7 @@ export function Post({ author, publishedAt, content }) {
     addSuffix: true
   })
 
+  // Criar um novo comentario
   function handleCreateNewComment() {
     event.preventDefault() // Para não fazer o padrão do HTML
 
@@ -35,6 +38,23 @@ export function Post({ author, publishedAt, content }) {
   function handleNewCommentChange() {
     setnewCommentText(event.target.value)
   }
+
+  // Não deixar comentar sem nada
+  function handleNewCommentInvalid() {
+    event.target.setCustomValidity('')
+    event.target.setCustomValidity('Esse campo é obrigatório!')
+  }
+
+  // Deletar um comentario
+  function deleteComment(commentToDelete) {
+    const commentsWithoutDeleteOne = comments.filter(comment => {
+      return comment != commentToDelete
+    })
+
+    setComments(commentsWithoutDeleteOne)
+  }
+
+  const isNewCommentEmpty = newCommentText.length == 0
 
   return (
     <article className={styles.post}>
@@ -57,10 +77,10 @@ export function Post({ author, publishedAt, content }) {
       <div className={styles.content}>
         {content.map(line => {
           if (line.type == 'paragraph') {
-            return <p>{line.content}</p>
+            return <p key={line.content}>{line.content}</p>
           } else if (line.type == 'link') {
             return (
-              <p>
+              <p key={line.content}>
                 <a href={line.content}>{line.content}</a>
               </p>
             )
@@ -75,15 +95,26 @@ export function Post({ author, publishedAt, content }) {
           name="comment"
           value={newCommentText}
           placeholder="Deixe um comentário"
+          onInvalid={handleNewCommentInvalid}
+          required
         />
+
         <footer>
-          <button type="submit">Publicar</button>
+          <button type="submit" disabled={isNewCommentEmpty}>
+            Publicar
+          </button>
         </footer>
       </form>
 
       <div className={styles.commentList}>
         {comments.map(comment => {
-          return <Comment content={comment} />
+          return (
+            <Comment
+              key={comment}
+              content={comment}
+              onDeleteComment={deleteComment}
+            />
+          )
         })}
       </div>
     </article>
